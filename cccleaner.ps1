@@ -135,6 +135,38 @@ function Save-ClaudeJson {
     }
 }
 
+function Copy-ClaudeDirectoryBackup {
+    param(
+        [Parameter(Mandatory)][string]$Source,
+        [Parameter(Mandatory)][string]$Destination
+    )
+
+    if (Get-Command robocopy.exe -ErrorAction SilentlyContinue) {
+        $output = & robocopy.exe $Source $Destination /E /XJ /R:0 /W:0 /NFL /NDL /NJH /NJS /NP 2>&1
+        $exitCode = $LASTEXITCODE
+
+        # Robocopy uses a bitmask: 0-7 are successful copy states; 8+ means failure.
+        if ($exitCode -lt 8) {
+            return
+        }
+
+        Write-WarningMessage "robocopy backup reported exit code $exitCode; retrying with PowerShell copy"
+        if ($output) {
+            Write-WarningMessage ($output -join "`n")
+        }
+    }
+
+    New-Item -ItemType Directory -Path $Destination -Force | Out-Null
+    Get-ChildItem -LiteralPath $Source -Force -ErrorAction Stop | ForEach-Object {
+        try {
+            Copy-Item -LiteralPath $_.FullName -Destination $Destination -Recurse -Force -ErrorAction Stop
+        }
+        catch {
+            Write-WarningMessage "Skipped backup item '$($_.FullName)': $($_.Exception.Message)"
+        }
+    }
+}
+
 function New-Backup {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -147,7 +179,7 @@ function New-Backup {
 
     if (Test-Path -LiteralPath $ClaudeDir -PathType Container) {
         $backupPath = Join-Path $BackupDir "claude_dir_$timestamp"
-        Copy-Item -LiteralPath $ClaudeDir -Destination $backupPath -Recurse -Force
+        Copy-ClaudeDirectoryBackup -Source $ClaudeDir -Destination $backupPath
         Write-Success "Backup created: $backupPath"
     }
 }
@@ -449,7 +481,14 @@ function Clear-DirectoryContents {
     param([Parameter(Mandatory)][string]$Path)
 
     if (Test-Path -LiteralPath $Path -PathType Container) {
-        Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+        Get-ChildItem -LiteralPath $Path -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            try {
+                Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
+            }
+            catch {
+                Write-WarningMessage "Skipped cleanup item '$($_.FullName)': $($_.Exception.Message)"
+            }
+        }
         return $true
     }
 

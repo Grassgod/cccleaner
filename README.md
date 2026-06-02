@@ -297,6 +297,8 @@ Not supported in the PowerShell script:
 
 This is intentional: the cleaner resets local history, cache, counters, and identity fields, but avoids deleting auth credentials.
 
+On Windows, directory backups use `robocopy` with junction/link skipping when available. Broken links or unreadable debug artifacts are reported as warnings and do not stop the clean.
+
 ## Backups
 
 By default, the script creates a backup before any modifications:
