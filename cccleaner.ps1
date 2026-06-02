@@ -164,7 +164,7 @@ function Get-ProjectProperties {
 
 function List-Projects {
     $config = Read-ClaudeJson
-    Write-Info "Projects in $ClaudeJson:"
+    Write-Info "Projects in ${ClaudeJson}:"
     Write-Host ""
 
     $projects = Get-ProjectProperties -Config $config
