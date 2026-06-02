@@ -99,5 +99,5 @@ try {
 }
 catch {
     Write-ErrorMessage $_.Exception.Message
-    exit 1
+    throw
 }

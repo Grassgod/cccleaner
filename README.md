@@ -58,19 +58,19 @@ After installation, restart your shell or run `exec zsh` to enable zsh completio
 Install the native PowerShell cleaner:
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.ps1 | iex
+$i="$env:TEMP\cccleaner-install.ps1"; iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.ps1 -OutFile $i; powershell -NoProfile -ExecutionPolicy Bypass -File $i; & "$HOME\.local\bin\cccleaner.cmd" -All
 ```
 
-This installs `cccleaner.ps1` and a `cccleaner.cmd` launcher to `%USERPROFILE%\.local\bin`, then adds that directory to the current user's PATH when needed. Open a new PowerShell terminal after installation.
+This installs `cccleaner.ps1` and a `cccleaner.cmd` launcher to `%USERPROFILE%\.local\bin`, then runs the cleaner by full path. It does not change PATH or PowerShell profile settings.
 
 Windows usage:
 
 ```powershell
-cccleaner -Help
-cccleaner -List
-cccleaner -All
-cccleaner -Folders
-cccleaner -UserId
+& "$HOME\.local\bin\cccleaner.cmd" -Help
+& "$HOME\.local\bin\cccleaner.cmd" -List
+& "$HOME\.local\bin\cccleaner.cmd" -All
+& "$HOME\.local\bin\cccleaner.cmd" -Folders
+& "$HOME\.local\bin\cccleaner.cmd" -UserId
 ```
 
 The Windows script cleans `%USERPROFILE%\.claude.json` and `%USERPROFILE%\.claude\`, and writes backups under `%USERPROFILE%\.claude_backups\`. It does not touch Windows Credential Manager or Claude Code authentication credentials.
@@ -117,7 +117,7 @@ curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/uninstall.sh
 On Windows PowerShell:
 
 ```powershell
-iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/uninstall.ps1 | iex
+$i="$env:TEMP\cccleaner-uninstall.ps1"; iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/uninstall.ps1 -OutFile $i; powershell -NoProfile -ExecutionPolicy Bypass -File $i
 ```
 
 Or if you cloned the repository:
@@ -148,7 +148,7 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 Windows PowerShell:
 
 ```powershell
-cccleaner -List
+& "$HOME\.local\bin\cccleaner.cmd" -List
 ```
 
 ### Clean everything (recommended)
@@ -159,7 +159,7 @@ cccleaner -List
 Windows PowerShell:
 
 ```powershell
-cccleaner -All
+& "$HOME\.local\bin\cccleaner.cmd" -All
 ```
 
 ### Clear specific project history
@@ -170,7 +170,7 @@ cccleaner -All
 Windows PowerShell:
 
 ```powershell
-cccleaner -Project "C:\Users\username\myproject"
+& "$HOME\.local\bin\cccleaner.cmd" -Project "C:\Users\username\myproject"
 ```
 
 ### Interactive mode (recommended)
@@ -181,7 +181,7 @@ cccleaner -Project "C:\Users\username\myproject"
 Windows PowerShell:
 
 ```powershell
-cccleaner -Interactive
+& "$HOME\.local\bin\cccleaner.cmd" -Interactive
 ```
 
 ### Clear cached data
@@ -192,7 +192,7 @@ cccleaner -Interactive
 Windows PowerShell:
 
 ```powershell
-cccleaner -Cache
+& "$HOME\.local\bin\cccleaner.cmd" -Cache
 ```
 
 ### Clear GitHub repository paths
@@ -203,7 +203,7 @@ cccleaner -Cache
 Windows PowerShell:
 
 ```powershell
-cccleaner -GithubRepos
+& "$HOME\.local\bin\cccleaner.cmd" -GithubRepos
 ```
 
 ### Clear ~/.claude folders (including history.jsonl)
@@ -214,7 +214,7 @@ cccleaner -GithubRepos
 Windows PowerShell:
 
 ```powershell
-cccleaner -Folders
+& "$HOME\.local\bin\cccleaner.cmd" -Folders
 ```
 
 ### Regenerate identity IDs
@@ -225,7 +225,7 @@ cccleaner -Folders
 Windows PowerShell:
 
 ```powershell
-cccleaner -UserId
+& "$HOME\.local\bin\cccleaner.cmd" -UserId
 ```
 
 ### Set US timezone override
@@ -246,7 +246,7 @@ cccleaner -UserId
 Windows PowerShell:
 
 ```powershell
-cccleaner -All -NoBackup
+& "$HOME\.local\bin\cccleaner.cmd" -All -NoBackup
 ```
 
 ## Options

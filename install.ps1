@@ -6,12 +6,13 @@
 
 .DESCRIPTION
     Installs cccleaner.ps1 and a cccleaner.cmd launcher into $HOME\.local\bin
-    and adds that directory to the current user's PATH when needed.
+    without changing PowerShell, PATH, or profile settings by default.
 #>
 
 [CmdletBinding()]
 param(
-    [string]$InstallDir = (Join-Path $HOME ".local\bin")
+    [string]$InstallDir = (Join-Path $HOME ".local\bin"),
+    [switch]$AddToPath
 )
 
 Set-StrictMode -Version Latest
@@ -104,21 +105,28 @@ try {
     Write-Success "Installed $ScriptName to $target"
     Write-Success "Installed $ShimName to $shimTarget"
 
-    if (Add-UserPath -Directory $InstallDir) {
-        Write-Success "Added $InstallDir to the current user's PATH"
-        Write-Host "Open a new terminal to use cccleaner by name."
+    if ($AddToPath) {
+        if (Add-UserPath -Directory $InstallDir) {
+            Write-Success "Added $InstallDir to the current user's PATH"
+            Write-Host "Open a new terminal to use cccleaner by name."
+        }
+        else {
+            Write-Info "$InstallDir is already in the current user's PATH"
+        }
     }
     else {
-        Write-Info "$InstallDir is already in the current user's PATH"
+        Write-Info "PATH was not changed. Use the full launcher path shown below."
     }
 
     Write-Host ""
     Write-Host "Usage:"
-    Write-Host "  cccleaner -Help"
-    Write-Host "  cccleaner -List"
-    Write-Host "  cccleaner -All"
+    Write-Host "  & `"$shimTarget`" -Help"
+    Write-Host "  & `"$shimTarget`" -List"
+    Write-Host "  & `"$shimTarget`" -All"
+    Write-Host ""
+    Write-Host "Optional: rerun install.ps1 with -AddToPath if you want the short 'cccleaner' command."
 }
 catch {
     Write-ErrorMessage $_.Exception.Message
-    exit 1
+    throw
 }
