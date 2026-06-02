@@ -498,6 +498,25 @@ generate_anonymous_id() {
     echo "claudecode.v1.$uuid"
 }
 
+# Mask identity values in output while still making changes visible
+mask_identity_value() {
+    local value="${1:-}"
+    local length=${#value}
+
+    if [ -z "$value" ]; then
+        echo "<missing>"
+    elif [ "$length" -le 8 ]; then
+        echo "***"
+    else
+        echo "${value:0:4}...${value: -4}"
+    fi
+}
+
+# Read current identity IDs as a tab-separated pair
+read_identity_ids() {
+    jq -r '[.userID // .user_id // .userId // "", .anonymousId // ""] | @tsv' "$CLAUDE_JSON"
+}
+
 # Reset counters and usage statistics
 reset_counters() {
     local temp_file=$(mktemp)
@@ -531,6 +550,18 @@ regenerate_identity_ids() {
     local temp_file=$(mktemp)
     local new_user_id
     local new_anonymous_id
+    local old_user_id=""
+    local old_anonymous_id=""
+    local written_user_id=""
+    local written_anonymous_id=""
+    local old_user_mask
+    local old_anonymous_mask
+    local written_user_mask
+    local written_anonymous_mask
+    local status_parts=()
+    local status_message
+
+    IFS=$'\t' read -r old_user_id old_anonymous_id < <(read_identity_ids)
     new_user_id=$(generate_user_id)
     new_anonymous_id=$(generate_anonymous_id)
 
@@ -549,7 +580,39 @@ regenerate_identity_ids() {
 
     if [ $? -eq 0 ]; then
         mv "$temp_file" "$CLAUDE_JSON"
-        print_success "Regenerated userID and anonymousId"
+        IFS=$'\t' read -r written_user_id written_anonymous_id < <(read_identity_ids)
+
+        if [ "$written_user_id" != "$new_user_id" ] || [ "$written_anonymous_id" != "$new_anonymous_id" ]; then
+            print_error "Failed to verify regenerated identity IDs after writing $CLAUDE_JSON"
+            exit 1
+        fi
+
+        old_user_mask=$(mask_identity_value "$old_user_id")
+        old_anonymous_mask=$(mask_identity_value "$old_anonymous_id")
+        written_user_mask=$(mask_identity_value "$written_user_id")
+        written_anonymous_mask=$(mask_identity_value "$written_anonymous_id")
+
+        if [ -z "$old_user_id" ]; then
+            status_parts+=("userID created: $written_user_mask")
+        elif [ "$old_user_id" != "$written_user_id" ]; then
+            status_parts+=("userID changed: $old_user_mask -> $written_user_mask")
+        else
+            print_error "userID did not change after regeneration"
+            exit 1
+        fi
+
+        if [ -z "$old_anonymous_id" ]; then
+            status_parts+=("anonymousId created: $written_anonymous_mask")
+        elif [ "$old_anonymous_id" != "$written_anonymous_id" ]; then
+            status_parts+=("anonymousId changed: $old_anonymous_mask -> $written_anonymous_mask")
+        else
+            print_error "anonymousId did not change after regeneration"
+            exit 1
+        fi
+
+        status_message=$(printf '; %s' "${status_parts[@]}")
+        status_message=${status_message:2}
+        print_success "Verified identity replacement ($status_message)"
     else
         rm -f "$temp_file"
         print_error "Failed to regenerate identity IDs"

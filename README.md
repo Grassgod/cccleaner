@@ -1,6 +1,6 @@
 # Claude Code Cleaner (cccleaner)
 
-A shell script to clean history and cached data from Claude Code's `~/.claude.json` file and `~/.claude/` directory.
+A cross-platform cleaner for Claude Code local history and cache data. The Bash script supports macOS/Linux/WSL/Git Bash, and the PowerShell script supports native Windows.
 
 ## Features
 
@@ -10,10 +10,12 @@ A shell script to clean history and cached data from Claude Code's `~/.claude.js
 - Clear cached data (changelog, gates, configs)
 - Clear GitHub repository paths
 - Regenerate identity IDs in `~/.claude.json` (`userID` and `anonymousId`)
+- Verify identity ID replacement and report masked before/after values
 - Clear `~/.claude` folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json)
 - Clear `~/.claude/history.jsonl`
 - Reset usage counters and usage statistics (numStartups, btwUseCount, promptQueueUseCount, tipsHistory, opus1mMergeNoticeSeenCount, voiceNoticeSeenCount, skillUsage, toolUsage, firstStartTime, claudeCodeFirstTokenDate)
 - Set or remove `TZ=America/Los_Angeles` with dedicated commands
+- Native Windows PowerShell cleaner (`cccleaner.ps1`)
 - Clean all option (everything at once)
 - Interactive mode for easy selection
 - Automatic backup creation before modifications
@@ -24,22 +26,24 @@ A shell script to clean history and cached data from Claude Code's `~/.claude.js
 - `jq` - command-line JSON processor
   - macOS: `brew install jq`
   - Linux: `apt-get install jq` or `yum install jq`
+  - Windows Bash/WSL: install `jq` in that environment
+- Windows PowerShell mode does not require `jq`
 
 ## Installation
 
-### Quick Install (Recommended)
+### macOS/Linux Quick Install
 
 Install with a single command:
 
 ```bash
-curl -s https://raw.githubusercontent.com/geminiwen/cccleaner/master/install.sh | bash
+curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.sh | bash
 ```
 
 Optional install-script helpers:
 
 ```bash
-curl -s https://raw.githubusercontent.com/geminiwen/cccleaner/master/install.sh | bash -s -- --set-us-timezone
-curl -s https://raw.githubusercontent.com/geminiwen/cccleaner/master/install.sh | bash -s -- --unset-timezone
+curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.sh | bash -s -- --set-us-timezone
+curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.sh | bash -s -- --unset-timezone
 ```
 
 This will:
@@ -49,11 +53,35 @@ This will:
 
 After installation, restart your shell or run `exec zsh` to enable zsh completion.
 
+### Windows PowerShell Quick Install
+
+Install the native PowerShell cleaner:
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.ps1 | iex
+```
+
+This installs `cccleaner.ps1` and a `cccleaner.cmd` launcher to `%USERPROFILE%\.local\bin`, then adds that directory to the current user's PATH when needed. Open a new PowerShell terminal after installation.
+
+Windows usage:
+
+```powershell
+cccleaner -Help
+cccleaner -List
+cccleaner -All
+cccleaner -Folders
+cccleaner -UserId
+```
+
+The Windows script cleans `%USERPROFILE%\.claude.json` and `%USERPROFILE%\.claude\`, and writes backups under `%USERPROFILE%\.claude_backups\`. It does not touch Windows Credential Manager or Claude Code authentication credentials.
+
+You can also run the script file directly with `pwsh .\cccleaner.ps1 -Help` if you do not install the launcher.
+
 ### Manual Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/geminiwen/cccleaner.git
+git clone https://github.com/Grassgod/cccleaner.git
 cd cccleaner
 ```
 
@@ -70,12 +98,26 @@ sudo mkdir -p /usr/local/share/zsh/site-functions
 sudo cp _cccleaner /usr/local/share/zsh/site-functions/
 ```
 
+For Windows PowerShell manual installation:
+
+```powershell
+git clone https://github.com/Grassgod/cccleaner.git
+cd cccleaner
+.\install.ps1
+```
+
 ## Uninstallation
 
 To uninstall cccleaner:
 
 ```bash
-curl -s https://raw.githubusercontent.com/geminiwen/cccleaner/master/uninstall.sh | bash
+curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/uninstall.sh | bash
+```
+
+On Windows PowerShell:
+
+```powershell
+iwr -useb https://raw.githubusercontent.com/Grassgod/cccleaner/master/uninstall.ps1 | iex
 ```
 
 Or if you cloned the repository:
@@ -103,9 +145,21 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 ./cccleaner --list
 ```
 
+Windows PowerShell:
+
+```powershell
+cccleaner -List
+```
+
 ### Clean everything (recommended)
 ```bash
 ./cccleaner --all
+```
+
+Windows PowerShell:
+
+```powershell
+cccleaner -All
 ```
 
 ### Clear specific project history
@@ -113,9 +167,21 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 ./cccleaner --project /Users/username/myproject
 ```
 
+Windows PowerShell:
+
+```powershell
+cccleaner -Project "C:\Users\username\myproject"
+```
+
 ### Interactive mode (recommended)
 ```bash
 ./cccleaner --interactive
+```
+
+Windows PowerShell:
+
+```powershell
+cccleaner -Interactive
 ```
 
 ### Clear cached data
@@ -123,9 +189,21 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 ./cccleaner --cache
 ```
 
+Windows PowerShell:
+
+```powershell
+cccleaner -Cache
+```
+
 ### Clear GitHub repository paths
 ```bash
 ./cccleaner --github-repos
+```
+
+Windows PowerShell:
+
+```powershell
+cccleaner -GithubRepos
 ```
 
 ### Clear ~/.claude folders (including history.jsonl)
@@ -133,9 +211,21 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 ./cccleaner --folders
 ```
 
+Windows PowerShell:
+
+```powershell
+cccleaner -Folders
+```
+
 ### Regenerate identity IDs
 ```bash
 ./cccleaner --user-id
+```
+
+Windows PowerShell:
+
+```powershell
+cccleaner -UserId
 ```
 
 ### Set US timezone override
@@ -151,6 +241,12 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 ### Skip backup creation (not recommended)
 ```bash
 ./cccleaner --all --no-backup
+```
+
+Windows PowerShell:
+
+```powershell
+cccleaner -All -NoBackup
 ```
 
 ## Options
@@ -170,19 +266,50 @@ These helpers do not install or uninstall `cccleaner`; they only manage `TZ`.
 | `-h, --help` | Show help message |
 | `--no-backup` | Skip backup creation (not recommended) |
 
+PowerShell option names are the same concepts in PowerShell style: `-All`, `-Project`, `-List`, `-Interactive`, `-Cache`, `-GithubRepos`, `-Folders`, `-UserId`, `-NoBackup`, and `-Help`. Timezone helper commands are only available in the Bash script.
+
+## Windows Support
+
+`cccleaner.ps1` supports native Windows PowerShell and PowerShell 7. It cleans the same Claude Code local data locations under the Windows user profile:
+
+- `%USERPROFILE%\.claude.json`
+- `%USERPROFILE%\.claude\`
+- `%USERPROFILE%\.claude_backups\`
+
+Supported Windows operations:
+
+- `-All`
+- `-Project`
+- `-List`
+- `-Interactive`
+- `-Cache`
+- `-GithubRepos`
+- `-Folders`
+- `-UserId`
+- `-NoBackup`
+
+Not supported in the PowerShell script:
+
+- macOS/Linux timezone helpers
+- zsh completion installation
+- Windows Credential Manager cleanup
+- Claude Code authentication credential removal
+
+This is intentional: the cleaner resets local history, cache, counters, and identity fields, but avoids deleting auth credentials.
+
 ## Backups
 
 By default, the script creates a backup before any modifications:
 - Backups are stored in `~/.claude_backups/`
 - Backup filename format:
-  - `claude_claude.json_YYYYMMDD_HHMMSS` for ~/.claude.json
+  - `claude_.claude.json_YYYYMMDD_HHMMSS` for ~/.claude.json
   - `claude_dir_YYYYMMDD_HHMMSS` for ~/.claude directory
   - `timezone_override_YYYYMMDD_HHMMSS/` for shell files or LaunchAgent affected by timezone commands
 
 To restore from backup:
 ```bash
 # Restore .claude.json
-cp ~/.claude_backups/claude_claude.json_20250117_143022 ~/.claude.json
+cp ~/.claude_backups/claude_.claude.json_20250117_143022 ~/.claude.json
 
 # Restore .claude directory
 cp -r ~/.claude_backups/claude_dir_20250117_143022 ~/.claude
@@ -213,6 +340,8 @@ When using `--github-repos`, the following key is removed from ~/.claude.json:
 When using `--user-id`, the script regenerates Claude Code identity identifiers:
 - `userID` - Replaced with a newly generated 64-character lowercase hexadecimal string
 - `anonymousId` - Replaced with a newly generated `claudecode.v1.<uuid>` identifier
+- The script re-reads `~/.claude.json` after writing and fails if either ID did not change
+- Success output shows masked before/after values, for example `userID changed: abcd...1234 -> ef01...5678`
 
 ### Claude Folders (--folders)
 Clears contents of the following directories:
@@ -269,7 +398,7 @@ The script preserves:
 ```bash
 $ ./cccleaner -i
 
-[INFO] Backup created: ~/.claude_backups/claude_claude.json_20250117_143022
+[INFO] Backup created: ~/.claude_backups/claude_.claude.json_20250117_143022
 
 Interactive Mode - Select projects to clean
 
@@ -302,7 +431,7 @@ Enter selection: 1
 ```bash
 $ ./cccleaner --all
 
-[INFO] Backup created: ~/.claude_backups/claude_claude.json_20250117_143530
+[INFO] Backup created: ~/.claude_backups/claude_.claude.json_20250117_143530
 [INFO] Backup created: ~/.claude_backups/claude_dir_20250117_143530
 
 [INFO] Performing deep clean...
@@ -319,7 +448,7 @@ $ ./cccleaner --all
 [SUCCESS] Cleared githubRepoPaths
 [SUCCESS] Cleared history.jsonl
 [SUCCESS] Reset numStartups, btwUseCount, promptQueueUseCount, tipsHistory, opus1mMergeNoticeSeenCount, voiceNoticeSeenCount, firstStartTime, claudeCodeFirstTokenDate, skillUsage, and toolUsage
-[SUCCESS] Regenerated userID and anonymousId
+[SUCCESS] Verified identity replacement (userID changed: abcd...1234 -> ef01...5678; anonymousId changed: clau...1111 -> clau...2222)
 [SUCCESS] Deep clean completed!
 ```
 

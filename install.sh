@@ -2,7 +2,7 @@
 
 # cccleaner installation script
 # Usage:
-#   curl -s https://raw.githubusercontent.com/geminiwen/cccleaner/master/install.sh | bash
+#   curl -s https://raw.githubusercontent.com/Grassgod/cccleaner/master/install.sh | bash
 
 set -e
 
@@ -13,7 +13,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # GitHub repository
-REPO="geminiwen/cccleaner"
+REPO="Grassgod/cccleaner"
 BRANCH="master"
 RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 
@@ -80,6 +80,15 @@ check_dependencies() {
     fi
 }
 
+check_platform() {
+    case "$(uname -s)" in
+        MINGW*|MSYS*|CYGWIN*)
+            print_warning "Windows shell detected. This Bash installer can work in Unix-like shells, but native Windows users should prefer:"
+            echo "  iwr -useb https://raw.githubusercontent.com/${REPO}/${BRANCH}/install.ps1 | iex"
+            ;;
+    esac
+}
+
 download_file() {
     local url="$1"
     local dest="$2"
@@ -139,6 +148,9 @@ main() {
 
     # Check dependencies
     check_dependencies
+
+    # Show a native Windows hint when relevant
+    check_platform
 
     # Check sudo access
     check_sudo
