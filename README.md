@@ -75,6 +75,8 @@ Windows usage:
 
 The Windows script cleans `%USERPROFILE%\.claude.json` and `%USERPROFILE%\.claude\`, and writes backups under `%USERPROFILE%\.claude_backups\`. It does not touch Windows Credential Manager or Claude Code authentication credentials.
 
+If `%USERPROFILE%\.claude.json` is empty or invalid JSON, `-All` first creates a raw backup and then rebuilds a minimal clean config so the reset can continue. Other targeted operations still require a readable JSON config. With `-NoBackup`, `-All` refuses to rebuild an invalid config.
+
 You can also run the script file directly with `pwsh .\cccleaner.ps1 -Help` if you do not install the launcher.
 
 ### Manual Installation
@@ -298,6 +300,8 @@ Not supported in the PowerShell script:
 This is intentional: the cleaner resets local history, cache, counters, and identity fields, but avoids deleting auth credentials.
 
 On Windows, directory backups use `robocopy` with junction/link skipping when available. Broken links or unreadable debug artifacts are reported as warnings and do not stop the clean.
+
+If `.claude.json` is already corrupt, `-All` keeps the original file in `%USERPROFILE%\.claude_backups\` before rebuilding a minimal clean replacement.
 
 ## Backups
 

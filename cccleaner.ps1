@@ -49,6 +49,8 @@ $ErrorActionPreference = "Stop"
 $ClaudeJson = Join-Path $HOME ".claude.json"
 $ClaudeDir = Join-Path $HOME ".claude"
 $BackupDir = Join-Path $HOME ".claude_backups"
+$RecoveredOldUserId = ""
+$RecoveredOldAnonymousId = ""
 
 function Write-Info {
     param([string]$Message)
@@ -111,7 +113,77 @@ function Read-ClaudeJson {
     if ([string]::IsNullOrWhiteSpace($raw)) {
         throw "Claude config is empty: $ClaudeJson"
     }
-    return $raw | ConvertFrom-Json
+
+    try {
+        return $raw | ConvertFrom-Json -ErrorAction Stop
+    }
+    catch {
+        throw "Claude config is invalid JSON: $ClaudeJson. Run -All without -NoBackup to rebuild it after backup, or restore a backup."
+    }
+}
+
+function Get-RawJsonStringValue {
+    param(
+        [Parameter(Mandatory)][string]$Raw,
+        [Parameter(Mandatory)][string[]]$Names
+    )
+
+    foreach ($name in $Names) {
+        $pattern = '"' + [regex]::Escape($name) + '"\s*:\s*"((?:\\.|[^"\\])*)"'
+        $match = [regex]::Match($Raw, $pattern)
+        if ($match.Success) {
+            return $match.Groups[1].Value
+        }
+    }
+
+    return ""
+}
+
+function Set-RecoveredIdentityFromRaw {
+    param([Parameter(Mandatory)][string]$Raw)
+
+    $script:RecoveredOldUserId = Get-RawJsonStringValue -Raw $Raw -Names @("userID", "user_id", "userId")
+    $script:RecoveredOldAnonymousId = Get-RawJsonStringValue -Raw $Raw -Names @("anonymousId")
+}
+
+function New-MinimalClaudeConfig {
+    return [pscustomobject]@{
+        projects = [pscustomobject]@{}
+    }
+}
+
+function Repair-ClaudeJsonForDeepClean {
+    param([switch]$AllowRebuild)
+
+    if (-not (Test-Path -LiteralPath $ClaudeJson -PathType Leaf)) {
+        Save-ClaudeJson -Config (New-MinimalClaudeConfig)
+        Write-WarningMessage "Claude config was not found; created a minimal clean config for deep clean."
+        return
+    }
+
+    $raw = Get-Content -LiteralPath $ClaudeJson -Raw
+    if ([string]::IsNullOrWhiteSpace($raw)) {
+        if (-not $AllowRebuild) {
+            throw "Claude config is empty: $ClaudeJson. Re-run -All without -NoBackup so it can be rebuilt after backup."
+        }
+
+        Save-ClaudeJson -Config (New-MinimalClaudeConfig)
+        Write-WarningMessage "Claude config was empty; rebuilt a minimal clean config after backup."
+        return
+    }
+
+    try {
+        $raw | ConvertFrom-Json -ErrorAction Stop | Out-Null
+    }
+    catch {
+        if (-not $AllowRebuild) {
+            throw "Claude config is invalid JSON: $ClaudeJson. Re-run -All without -NoBackup so it can be rebuilt after backup."
+        }
+
+        Set-RecoveredIdentityFromRaw -Raw $raw
+        Save-ClaudeJson -Config (New-MinimalClaudeConfig)
+        Write-WarningMessage "Claude config was invalid JSON; rebuilt a minimal clean config after backup."
+    }
 }
 
 function Save-ClaudeJson {
@@ -426,6 +498,14 @@ function Reset-IdentityIds {
     $config = Read-ClaudeJson
     $oldUserId = Get-IdentityValue -Config $config -Names @("userID", "user_id", "userId")
     $oldAnonymousId = Get-IdentityValue -Config $config -Names @("anonymousId")
+
+    if ([string]::IsNullOrEmpty($oldUserId) -and -not [string]::IsNullOrEmpty($script:RecoveredOldUserId)) {
+        $oldUserId = $script:RecoveredOldUserId
+    }
+    if ([string]::IsNullOrEmpty($oldAnonymousId) -and -not [string]::IsNullOrEmpty($script:RecoveredOldAnonymousId)) {
+        $oldAnonymousId = $script:RecoveredOldAnonymousId
+    }
+
     $newUserId = New-UserId
     $newAnonymousId = New-AnonymousId
 
@@ -679,6 +759,7 @@ try {
     }
 
     if ($All) {
+        Repair-ClaudeJsonForDeepClean -AllowRebuild:(-not $NoBackup)
         Invoke-CleanAll
     }
     elseif ($Project) {
