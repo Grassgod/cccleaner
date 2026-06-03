@@ -81,13 +81,13 @@ Usage:
     pwsh .\$scriptName [options]
 
 Options:
-    -All, -a              Clean everything (histories + projects + folders + cache + githubRepoPaths + history.jsonl + counters + identity IDs)
+    -All, -a              Clean everything (histories + projects + folders + cache + githubRepoPaths + settings.json + history.jsonl + counters + identity IDs)
     -Project, -p PATH     Clear history for specific project path
     -List, -l             List all projects
     -Interactive, -i      Interactive mode to select projects
     -Cache, -c            Clear cached data
     -GithubRepos, -g      Clear GitHub repository paths
-    -Folders, -f          Clear .claude folder contents
+    -Folders, -f          Clear .claude folder contents, stats-cache.json, settings.json, and history.jsonl
     -UserId, -u           Regenerate userID and anonymousId in .claude.json
     -NoBackup             Skip backup creation (not recommended)
     -Help, -h             Show this help message
@@ -607,6 +607,13 @@ function Clear-ClaudeFolders {
         $cleaned = $true
     }
 
+    $settingsJson = Join-Path $ClaudeDir "settings.json"
+    if (Test-Path -LiteralPath $settingsJson -PathType Leaf) {
+        Set-Content -LiteralPath $settingsJson -Value "{}" -Encoding UTF8
+        Write-Success "Reset settings.json"
+        $cleaned = $true
+    }
+
     if (-not $cleaned) {
         Write-WarningMessage "No folders found to clean"
     }
@@ -685,7 +692,7 @@ function Invoke-Interactive {
             break
         }
         "^[fF]$" {
-            if ((Read-Host "Clear .claude folders and history.jsonl? (y/N)") -match "^[Yy]$") {
+            if ((Read-Host "Clear .claude folders, settings.json, and history.jsonl? (y/N)") -match "^[Yy]$") {
                 Clear-ClaudeFolders
                 Clear-HistoryJsonl
             }

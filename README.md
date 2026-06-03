@@ -11,7 +11,7 @@ A cross-platform cleaner for Claude Code local history and cache data. The Bash 
 - Clear GitHub repository paths
 - Regenerate identity IDs in `~/.claude.json` (`userID` and `anonymousId`)
 - Verify identity ID replacement and report masked before/after values
-- Clear `~/.claude` folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json)
+- Clear `~/.claude` folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, settings.json)
 - Clear `~/.claude/history.jsonl`
 - Reset usage counters and usage statistics (numStartups, btwUseCount, promptQueueUseCount, tipsHistory, opus1mMergeNoticeSeenCount, voiceNoticeSeenCount, skillUsage, toolUsage, firstStartTime, claudeCodeFirstTokenDate)
 - Set or remove `TZ=America/Los_Angeles` with dedicated commands
@@ -255,13 +255,13 @@ Windows PowerShell:
 
 | Option | Description |
 |--------|-------------|
-| `-a, --all` | Clean everything (histories + projects + folders + cache + githubRepoPaths + history.jsonl + counters + usage stats + userID + anonymousId) |
+| `-a, --all` | Clean everything (histories + projects + folders + cache + githubRepoPaths + settings.json + history.jsonl + counters + usage stats + userID + anonymousId) |
 | `-p, --project PATH` | Clear history for specific project path |
 | `-l, --list` | List all projects |
 | `-i, --interactive` | Interactive mode to select projects |
 | `-c, --cache` | Clear cached data (changelog, etc.) |
 | `-g, --github-repos` | Clear GitHub repository paths |
-| `-f, --folders` | Clear ~/.claude folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, history.jsonl) |
+| `-f, --folders` | Clear ~/.claude folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, settings.json, history.jsonl) |
 | `-u, --user-id` | Regenerate identity IDs in ~/.claude.json (`userID` and `anonymousId`) |
 | `--set-us-timezone` | Set `TZ=America/Los_Angeles` in shell startup files and macOS LaunchAgent |
 | `--unset-timezone` | Remove `TZ` overrides from shell startup files and macOS LaunchAgent |
@@ -367,6 +367,7 @@ Clears contents of the following directories:
 
 Also clears:
 - `~/.claude/stats-cache.json` - Local stats cache file
+- `~/.claude/settings.json` - User settings, reset to valid empty JSON
 
 ### Clean All (--all)
 Performs all of the above cleaning operations at once, including:
@@ -375,6 +376,7 @@ Performs all of the above cleaning operations at once, including:
 - Clearing all ~/.claude folders
 - Clearing cached data
 - Clearing GitHub repository paths
+- Resetting settings.json
 - Clearing history.jsonl
 - Resetting usage counters (numStartups, btwUseCount, promptQueueUseCount, tipsHistory, opus1mMergeNoticeSeenCount, voiceNoticeSeenCount, firstStartTime, claudeCodeFirstTokenDate)
 - Clearing usage statistics (`skillUsage`, `toolUsage`)
@@ -396,7 +398,6 @@ The script preserves:
 - Project settings (allowedTools, mcpServers, etc.) - when using --folders only
 - Feature flags (except cached ones)
 - `~/.claude/commands/` - Custom slash commands
-- `~/.claude/settings.json` - User settings
 
 ## Examples
 
@@ -417,7 +418,7 @@ Options:
   [a] Clean everything
   [c] Clear cache
   [g] Clear GitHub repository paths
-  [f] Clear folders (file-history, projects, todos, shell-snapshots, statsig, debug, history.jsonl)
+  [f] Clear folders (file-history, projects, todos, shell-snapshots, statsig, debug, settings.json, history.jsonl)
   [q] Quit
 
 Enter selection (number/a/c/g/f/q): 1
@@ -450,6 +451,7 @@ $ ./cccleaner --all
 [SUCCESS] Cleared shell-snapshots
 [SUCCESS] Cleared statsig
 [SUCCESS] Cleared debug
+[SUCCESS] Reset settings.json
 [SUCCESS] Cleared cached data
 [SUCCESS] Cleared githubRepoPaths
 [SUCCESS] Cleared history.jsonl

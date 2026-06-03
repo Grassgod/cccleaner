@@ -83,13 +83,13 @@ Claude Code Cleaner - Clean history from ~/.claude.json
 Usage: $(basename "$0") [options]
 
 Options:
-    -a, --all              Clean everything (histories + projects + folders + cache + githubRepoPaths + history.jsonl + counters + usage stats + identity IDs)
+    -a, --all              Clean everything (histories + projects + folders + cache + githubRepoPaths + settings.json + history.jsonl + counters + usage stats + identity IDs)
     -p, --project PATH     Clear history for specific project path
     -l, --list             List all projects
     -i, --interactive      Interactive mode to select projects
     -c, --cache            Clear cached data (changelog, etc.)
     -g, --github-repos     Clear GitHub repository paths
-    -f, --folders          Clear ~/.claude folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, history.jsonl)
+    -f, --folders          Clear ~/.claude folder contents (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, settings.json, history.jsonl)
     -u, --user-id          Regenerate identity IDs in ~/.claude.json (userID + anonymousId)
     --set-us-timezone      Set TZ=America/Los_Angeles in shell files and macOS LaunchAgent
     --unset-timezone       Remove TZ overrides from shell files and macOS LaunchAgent
@@ -767,6 +767,13 @@ clear_claude_folders() {
         cleaned=1
     fi
 
+    # Reset settings.json to valid empty JSON
+    if [ -f "$CLAUDE_DIR/settings.json" ]; then
+        printf '{}\n' > "$CLAUDE_DIR/settings.json"
+        print_success "Reset settings.json"
+        cleaned=1
+    fi
+
     if [ $cleaned -eq 0 ]; then
         print_warning "No folders found to clean"
     fi
@@ -822,7 +829,7 @@ interactive_mode() {
     echo "  [a] Clean everything"
     echo "  [c] Clear cache"
     echo "  [g] Clear GitHub repository paths"
-    echo "  [f] Clear folders (file-history, projects, todos, shell-snapshots, statsig, debug, history.jsonl)"
+    echo "  [f] Clear folders (file-history, projects, todos, shell-snapshots, statsig, debug, settings.json, history.jsonl)"
     echo "  [u] Regenerate userID and anonymousId"
     echo "  [q] Quit"
     echo
@@ -854,7 +861,7 @@ interactive_mode() {
             fi
             ;;
         f|F)
-            read -p "Clear ~/.claude folders (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, history.jsonl)? (y/N): " confirm
+            read -p "Clear ~/.claude folders (file-history, projects, todos, shell-snapshots, statsig, debug, session-env, tasks, plans, paste-cache, telemetry, backups, stats-cache.json, settings.json, history.jsonl)? (y/N): " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 clear_claude_folders
                 clear_history_jsonl
